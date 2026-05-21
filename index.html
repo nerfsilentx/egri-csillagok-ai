@@ -702,7 +702,7 @@ ${conv.messages.slice(-6, -1).map(m => m.role === 'user' ? 'Kérdés: ' + m.cont
 
 try {
   const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}{apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}{apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
