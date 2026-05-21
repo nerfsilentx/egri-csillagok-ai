@@ -726,7 +726,7 @@ async function sendMessage() {
           'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192", // Valódi generatív Llama 3 mesterséges intelligencia modell
+          model: "llama-3.1-8b-instant", // Valódi generatív Llama 3 mesterséges intelligencia modell
           messages: apiMessages,
           temperature: 0.7,
           max_tokens: 600
