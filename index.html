@@ -219,7 +219,7 @@ body {
   border-radius: 20px;
   padding: 5px 12px;
   font-size: 12px;
-  color: var(--text3);
+  color: var(--accent);
 }
 
 /* MESSAGES */
@@ -424,7 +424,6 @@ body {
 </head>
 <body>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-header">
     <div class="logo">
@@ -441,9 +440,9 @@ body {
 
   <div class="sidebar-footer">
     <div class="api-config">
-      <label>Gemini API kulcs</label>
+      <label>Groq API kulcs (gsk_...)</label>
       <div class="api-input-wrap">
-        <input type="password" id="apiKey" placeholder="KULCS" autocomplete="off"/>
+        <input type="password" id="apiKey" placeholder="gsk_..." autocomplete="off"/>
         <button class="api-save-btn" onclick="saveKey()">Mentés</button>
       </div>
       <div class="api-status none" id="apiStatus">
@@ -453,11 +452,10 @@ body {
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <span class="topbar-title">Gárdonyi Géza · Egri Csillagok (1901)</span>
-    <span class="model-badge" id="modelBadge">Gemini 1.5 Flash</span>
+    <span class="model-badge" id="modelBadge">Llama 3 (Generative AI)</span>
   </div>
 
   <div class="messages" id="messages">
@@ -504,7 +502,7 @@ const KB = [
     v: "Az Egri Csillagok szerzője Gárdonyi Géza (1863–1922), eredeti nevén Ziegler Géza. A regény 1899-ben jelent meg először folytatásokban az Egri Újságban, könyv alakban 1901-ben adták ki. Gárdonyi Egerben élt, és a vár közelében töltötte élete nagy részét, ami erősen inspirálta a mű megírásában. A regény a magyar irodalom egyik legnagyobb sikerű alkotása." },
 
   { k: ["ostrom","1552","török","vár","csata","eger","ali pasa","sereg","védők","szeptembertől"],
-    v: "Az egri vár ostromára 1552 szeptemberében–októberében került sor. Ali pasa kb. 35–40 000 fős török serege szállt szembe a Dobó István vezette kb. 2000 fős védősereggeL (köztük nőkkel és civilekkel). Az ostrom 38 napig tartott (szeptember 9. – október 18.) és a magyar védők győzelmével végződött. A törökök kénytelenek voltak elvonulni. Ez az esemény az egész keresztény Európát meglepte, és nemzeti legendává vált." },
+    v: "Az egri vár ostromára 1552 szeptemberében–októberében került sor. Ali pasa kb. 35–40 000 fős török serege szállt szembe a Dobó István vezette kb. 2000 fős védősereggel (köztük nőkkel és civilekkel). Az ostrom 38 napig tartott (szeptember 9. – október 18.) és a magyar védők győzelmével végződött. A törökök kénytelenek voltak elvonulni. Ez az esemény az egész keresztény Európát meglepte, és nemzeti legendává vált." },
 
   { k: ["bornemissza","gergő","gergely","főhős","kisfiú","vitéz","fejlődés"],
     v: "Bornemissza Gergő (teljes nevén Bornemissza Gergely) a regény főhőse. Paraszti sorból indult, szülei korán meghaltak, és Cecey Pál nemesember házába kerül szolgaként. Ott ismerkedik meg Évával, Cecey lányával, akibe beleszeret. Évek alatt vitézzé válik, Magyarváron, majd Sztambulban is megfordul fogságban, és felnőttként Dobó seregébe lép, ahol az egri csatában döntő szerepet játszik. Útja a parasztgyerektől a hős vitézig a regény gerince." },
@@ -534,7 +532,7 @@ const KB = [
     v: "A regény a mohácsi csata (1526) utáni korszakban játszódik, amikor az Oszmán Birodalom fokozatosan terjeszkedett a Magyar Királyság rovására. A középső országrész török uralom alá került, és Eger stratégiai fontosságú végvár volt az észak-magyarországi védelmi vonalban. Az 1552-es egri győzelem így nem csupán katonai siker, hanem szimbolikus ellenállás volt a hódítással szemben." },
 
   { k: ["türelem","fogság","sztambul","konstantinápoly","rabság"],
-    v: "Gergő útja során fogságba esik, és egy ideig Sztambulban (Konstantinápolyban) tölt időt. Ez a rész lehetőséget ad Gárdonyi Géza számára, hogy bemutassa az oszmán birodalmat belülről, annak kultúráját, palotáit és szokásait. Gergő megfigyeli az ellenséget, ami később az egri csatában is hasznos tudásnak bizonyul." },
+    v: "Gergő útja során fogságba esik, and egy ideig Sztambulban (Konstantinápolyban) tölt időt. Ez a rész lehetőséget ad Gárdonyi Géza számára, hogy bemutassa az oszmán birodalmat belülről, annak kultúráját, palotáit és szokásait. Gergő megfigyeli az ellenséget, ami később az egri csatában is hasznos tudásnak bizonyul." },
 
   { k: ["stílus","irodalom","értékelés","hatás","népszerűség"],
     v: "Gárdonyi realista és romantikus elemeket ötvöz a regényben. Stílusa érzékletes, a történelmi korhangulat hitelesen van megteremtve. A mű generációk óta kötelező iskolai olvasmány Magyarországon, és az egyik leggyakrabban kiadott magyar regény. Filmes feldolgozása is készült (1968, rendező: Várkonyi Zoltán)." },
@@ -545,7 +543,6 @@ const KB = [
 
 function findContext(question) {
   const q = question.toLowerCase();
-  const words = q.split(/\s+/);
   let best = null, bestScore = 0;
   for (const item of KB) {
     let score = 0;
@@ -560,7 +557,7 @@ function findContext(question) {
 // ──────────────────────────────────────────────────────────────
 //  ÁLLAPOT
 // ──────────────────────────────────────────────────────────────
-let apiKey = localStorage.getItem('gemini_key') || '';
+let apiKey = localStorage.getItem('gemini_key') || ''; // Megtartjuk a meglévő változónevet a kompatibilitás miatt
 let conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
 let currentId = null;
 let isLoading = false;
@@ -589,9 +586,16 @@ function saveKey() {
 
 function setApiStatus(type, msg) {
   const el = document.getElementById('apiStatus');
-  if (type === 'ok') { el.className = 'api-status ok'; el.innerHTML = '<span>●</span> Beállítva — készen áll'; }
-  else if (type === 'err') { el.className = 'api-status err'; el.innerHTML = '<span>●</span> ' + (msg || 'Hiba'); }
-  else { el.className = 'api-status none'; el.innerHTML = '<span>●</span> Nincs beállítva'; }
+  if (type === 'ok') { 
+    el.className = 'api-status ok';
+    el.innerHTML = '<span>●</span> Groq API készen áll'; 
+  } else if (type === 'err') { 
+    el.className = 'api-status err';
+    el.innerHTML = '<span>●</span> ' + (msg || 'Hiba'); 
+  } else { 
+    el.className = 'api-status none';
+    el.innerHTML = '<span>●</span> Nincs beállítva'; 
+  }
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -664,7 +668,7 @@ async function sendMessage() {
   const q = input.value.trim();
   if (!q) return;
   if (!apiKey) {
-    alert('Kérlek add meg a Gemini API kulcsot a bal oldali panelen!');
+    alert('Kérlek add meg a Groq API kulcsot (gsk_...) a bal oldali panelen!');
     return;
   }
 
@@ -673,11 +677,9 @@ async function sendMessage() {
   isLoading = true;
   document.getElementById('sendBtn').disabled = true;
 
-  // Eltüntetjük a welcome screent
   const welcome = document.getElementById('welcome');
   if (welcome) welcome.remove();
 
-  // Új konverzáció ha kell
   if (!currentId) {
     currentId = Date.now().toString();
     conversations.push({ id: currentId, title: q.slice(0, 40), messages: [] });
@@ -693,23 +695,41 @@ async function sendMessage() {
   scrollBottom();
 
   const ctx = findContext(q);
-  const systemPrompt = `Te egy irodalmi asszisztens vagy, aki Gárdonyi Géza "Egri Csillagok" c. regényéről válaszol kérdésekre.
-Mindig MAGYARUL válaszolj. Légy informatív, de tömör. Kerüld a felesleges ismétlést.
-Ha a kérdés nem kapcsolódik a regényhez, jelezd barátságosan, hogy csak az Egri Csillagokról tudsz segíteni.
-${ctx ? '\n### Releváns információ a tudásbázisból:\n' + ctx : ''}
-### Korábbi üzenetek:
-${conv.messages.slice(-6, -1).map(m => m.role === 'user' ? 'Kérdés: ' + m.content : 'Válasz: ' + m.content).join('\n')}`;
+  
+  // Összerakjuk a kontextus üzeneteket a Groq API formátumának megfelelően
+  const apiMessages = [
+    {
+      role: "system",
+      content: `Te egy irodalmi asszisztens vagy, aki Gárdonyi Géza "Egri Csillagok" c. regényéről válaszol kérdésekre. Always respond in HUNGARIAN. Légy informatív, de tömör. Kerüld a felesleges ismétlést. Ha a kérdés nem kapcsolódik a regényhez, jelezd barátságosan, hogy csak az Egri Csillagokról tudsz segíteni. ${ctx ? '\n\nReleváns információ a belső adatbázisból kiegészítésként: ' + ctx : ''}`
+    }
+  ];
+
+  // Beszélgetési előzmények hozzáadása (utolsó 6 üzenet)
+  conv.messages.slice(-7, -1).forEach(m => {
+    apiMessages.push({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content
+    });
+  });
+
+  // Aktuális kérdés hozzáadása
+  apiMessages.push({ role: 'user', content: q });
 
   try {
+    // A Groq felhő alapú LLM API meghívása
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`,
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents: [{ role: 'user', parts: [{ text: q }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+          model: "llama3-8b-8192", // Valódi generatív Llama 3 mesterséges intelligencia modell
+          messages: apiMessages,
+          temperature: 0.7,
+          max_tokens: 600
         })
       }
     );
@@ -720,19 +740,18 @@ ${conv.messages.slice(-6, -1).map(m => m.role === 'user' ? 'Kérdés: ' + m.cont
     }
 
     const data = await res.json();
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Nem érkezett válasz.';
+    const answer = data.choices?.[0]?.message?.content || 'Nem érkezett válasz.';
 
     loadingEl.className = 'bubble ai';
     loadingEl.innerHTML = '';
     loadingEl.textContent = answer;
-
     conv.messages.push({ role: 'assistant', content: answer });
     localStorage.setItem('conversations', JSON.stringify(conversations));
 
   } catch (e) {
     loadingEl.className = 'bubble ai';
     loadingEl.style.color = '#c87070';
-    loadingEl.textContent = '⚠ Hiba: ' + e.message + '\n\nEllenőrizd az API kulcsot a bal oldali panelen.';
+    loadingEl.textContent = '⚠ AI Hiba: ' + e.message + '\n\nEllenőrizd az API kulcsot a bal oldali panelen.';
     setApiStatus('err', 'Hiba a kérésben');
   }
 
