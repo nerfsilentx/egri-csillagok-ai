@@ -126,6 +126,69 @@ body {
 .history-item:hover { background: var(--bg3); color: var(--text); }
 .history-item.active { background: var(--bg3); color: var(--text); }
 
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.api-config {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.api-config label {
+  font-size: 11px;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.api-input-wrap { display: flex; gap: 6px; }
+
+.api-input-wrap input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  outline: none;
+  min-width: 0;
+}
+.api-input-wrap input:focus { border-color: var(--accent2); }
+.api-input-wrap input::placeholder { color: var(--text3); }
+
+.api-save-btn {
+  background: rgba(200,169,110,0.15);
+  border: 1px solid rgba(200,169,110,0.3);
+  color: var(--accent);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.api-save-btn:hover { background: rgba(200,169,110,0.25); }
+
+.api-status {
+  font-size: 11px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.api-status.ok { color: #6ea87e; }
+.api-status.err { color: #c87070; }
+.api-status.none { color: var(--text3); }
+
 /* MAIN */
 .main {
   flex: 1;
@@ -375,13 +438,26 @@ body {
 
   <div class="sidebar-section">Előzmények</div>
   <div class="chat-history" id="history"></div>
+
+  <div class="sidebar-footer">
+    <div class="api-config">
+      <label>Gemini API kulcs</label>
+      <div class="api-input-wrap">
+        <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off"/>
+        <button class="api-save-btn" onclick="saveKey()">Mentés</button>
+      </div>
+      <div class="api-status none" id="apiStatus">
+        <span>●</span> Nincs beállítva
+      </div>
+    </div>
+  </div>
 </aside>
 
 <!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <span class="topbar-title">Gárdonyi Géza · Egri Csillagok (1901)</span>
-    <span class="model-badge" id="modelBadge">Gemini 2.0 Flash</span>
+    <span class="model-badge" id="modelBadge">Gemini 1.5 Flash</span>
   </div>
 
   <div class="messages" id="messages">
@@ -421,10 +497,8 @@ body {
 
 <script>
 // ──────────────────────────────────────────────────────────────
-//  BEÁLLÍTÁSOK ÉS TUDÁSBÁZIS
+//  TUDÁSBÁZIS
 // ──────────────────────────────────────────────────────────────
-const apiKey = 'AIzaSyBUIyzgCPjIJRok8VxG3KJdS0PlVgJilYc'; // <--- IDE MÁSOLD BE AZ API KULCSODAT
-
 const KB = [
   { k: ["gárdonyi","szerző","ki írta","írta","keletkezés","1901","1899"],
     v: "Az Egri Csillagok szerzője Gárdonyi Géza (1863–1922), eredeti nevén Ziegler Géza. A regény 1899-ben jelent meg először folytatásokban az Egri Újságban, könyv alakban 1901-ben adták ki. Gárdonyi Egerben élt, és a vár közelében töltötte élete nagy részét, ami erősen inspirálta a mű megírásában. A regény a magyar irodalom egyik legnagyobb sikerű alkotása." },
@@ -486,6 +560,7 @@ function findContext(question) {
 // ──────────────────────────────────────────────────────────────
 //  ÁLLAPOT
 // ──────────────────────────────────────────────────────────────
+let apiKey = localStorage.getItem('gemini_key') || '';
 let conversations = JSON.parse(localStorage.getItem('conversations') || '[]');
 let currentId = null;
 let isLoading = false;
@@ -494,8 +569,30 @@ let isLoading = false;
 //  INIT
 // ──────────────────────────────────────────────────────────────
 window.onload = () => {
+  if (apiKey) {
+    document.getElementById('apiKey').value = apiKey;
+    setApiStatus('ok');
+  }
   renderHistory();
 };
+
+// ──────────────────────────────────────────────────────────────
+//  API KEY
+// ──────────────────────────────────────────────────────────────
+function saveKey() {
+  const val = document.getElementById('apiKey').value.trim();
+  if (!val) { setApiStatus('err', 'Üres kulcs'); return; }
+  apiKey = val;
+  localStorage.setItem('gemini_key', val);
+  setApiStatus('ok');
+}
+
+function setApiStatus(type, msg) {
+  const el = document.getElementById('apiStatus');
+  if (type === 'ok') { el.className = 'api-status ok'; el.innerHTML = '<span>●</span> Beállítva — készen áll'; }
+  else if (type === 'err') { el.className = 'api-status err'; el.innerHTML = '<span>●</span> ' + (msg || 'Hiba'); }
+  else { el.className = 'api-status none'; el.innerHTML = '<span>●</span> Nincs beállítva'; }
+}
 
 // ──────────────────────────────────────────────────────────────
 //  ELŐZMÉNY KEZELÉS
@@ -566,9 +663,8 @@ async function sendMessage() {
   const input = document.getElementById('userInput');
   const q = input.value.trim();
   if (!q) return;
-
-  if (apiKey === 'AIzaSyBUIyzgCPjIJRok8VxG3KJdS0PlVgJilYc') {
-    alert('Kérlek írd be a saját Gemini API kulcsodat a kódba (apiKey változó)!');
+  if (!apiKey) {
+    alert('Kérlek add meg a Gemini API kulcsot a bal oldali panelen!');
     return;
   }
 
@@ -606,27 +702,17 @@ ${conv.messages.slice(-6, -1).map(m => m.role === 'user' ? 'Kérdés: ' + m.cont
 
   try {
     const res = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-  {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: q }]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 600
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: [{ role: 'user', parts: [{ text: q }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 600 }
+        })
       }
-    })
-  }
-);
+    );
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -646,7 +732,8 @@ ${conv.messages.slice(-6, -1).map(m => m.role === 'user' ? 'Kérdés: ' + m.cont
   } catch (e) {
     loadingEl.className = 'bubble ai';
     loadingEl.style.color = '#c87070';
-    loadingEl.textContent = '⚠ Hiba: ' + e.message;
+    loadingEl.textContent = '⚠ Hiba: ' + e.message + '\n\nEllenőrizd az API kulcsot a bal oldali panelen.';
+    setApiStatus('err', 'Hiba a kérésben');
   }
 
   isLoading = false;
